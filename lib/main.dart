@@ -1,5 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_2/widgets/file_picker.dart';
+import 'package:provider/provider.dart';
+
+import 'Providers/image_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,59 +36,10 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  FilePickerWidgetState createState() => FilePickerWidgetState();
-}
-
-class FilePickerWidgetState extends State<MyHomePage> {
-  String _filePath = '';
-
-  Future<void> _openFilePicker() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles();
-      if (result != null) {
-        setState(() {
-          _filePath = result.files.single.path ?? 'error';
-        });
-      }
-    } catch (e) {
-      print("Error picking a file: $e");
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ElevatedButton(
-          onPressed: _openFilePicker,
-          child: const Text("Select a File"),
-        ),
-        const SizedBox(height: 16.0),
-        Text(
-          "Selected File: $_filePath",
-          style: const TextStyle(fontSize: 16.0),
-        ),
-      ],
+      home: ChangeNotifierProvider(
+        create: (context) => ImageList(), // Provide the ImageList to the widget tree.
+        child: FilePickerWidgetState(),
+      ),
     );
   }
 }
