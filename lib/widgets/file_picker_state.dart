@@ -1,27 +1,21 @@
 import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_2/Providers/image_provider.dart';
+import 'package:flutter_application_2/models/image_model.dart';
+import 'package:flutter_application_2/screens/home_screen.dart';
+import 'package:provider/provider.dart';
 
-const List<String> fileTypes = ['jpg', 'png'];
-
-class FilePickerWidgetState extends StatelessWidget {
-  String? _filePath = "";
-
-  List<File> files = <File>[];
-
+class FilePickerWidgetState extends State<MyHomePage> {
   // Define variables to store file information
-  String imageName = "";
-  String fileType = "";
-  String imageSize = "";
-  List<DataRow> rows = [];
+  final List<DataRow> rows = [];
 
   Future<void> _openFilePicker() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
+    final imageProvider = Provider.of<MyImageProvider>(context, listen: false);
+
     if (result != null) {
-      setState(() {
-        _filePath = result.files.single.path;
-      });
+      imageProvider.setFilePath(result.files.single.path as String);
     }
 
     // Show a dialog box with an image after file selection.
@@ -30,6 +24,12 @@ class FilePickerWidgetState extends StatelessWidget {
 
   // Create a separate async function for showing the dialog.
   Future<void> _showImageDialog() async {
+    String imageName = '';
+    String fileType = '';
+    String size = '';
+
+    final imageProvider = Provider.of<MyImageProvider>(context, listen: false);
+
     await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -37,16 +37,14 @@ class FilePickerWidgetState extends StatelessWidget {
           content: Column(
             children: [
               Image.file(
-                File(_filePath as String), // Display the selected image
+                File(imageProvider.filePath), // Display the selected image
                 width: 200,
                 height: 200,
               ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Image Name'),
                 onChanged: (value) {
-                  setState(() {
-                    imageName = value;
-                  });
+                  imageName = value;
                 },
               ),
               DropdownButtonFormField<String>(
@@ -57,17 +55,13 @@ class FilePickerWidgetState extends StatelessWidget {
                   );
                 }).toList(),
                 onChanged: (value) {
-                  setState(() {
-                    fileType = value as String;
-                  });
+                  fileType = value as String;
                 },
               ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Image Size'),
                 onChanged: (value) {
-                  setState(() {
-                    imageSize = value;
-                  });
+                  size = value;
                 },
               ),
             ],
@@ -75,21 +69,26 @@ class FilePickerWidgetState extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () {
+                imageProvider.addImage(ImageModel(
+                    name: imageName,
+                    type: fileType,
+                    size: size,
+                    path: imageProvider.filePath));
+
                 //Save Image information
+                DataRow newRow =
+                    DataRow(onLongPress: _showImageFullSize, cells: [
+                  DataCell(Image.file(
+                    File(imageProvider
+                        .images.last.path), // Display the selected image
+                    width: 30,
+                    height: 30,
+                  )),
+                  DataCell(Text(imageProvider.images.last.name)),
+                  DataCell(Text(imageProvider.images.last.type)),
+                  DataCell(Text(imageProvider.images.last.size)),
+                ]);
                 setState(() {
-                  DataRow newRow = DataRow(cells: [
-                    DataCell(
-                        Image.file(
-                          File(_filePath
-                              as String), // Display the selected image
-                          width: 30,
-                          height: 30,
-                        ),
-                        onTap: _showImageFullSize),
-                    DataCell(Text(imageName)),
-                    DataCell(Text(fileType)),
-                    DataCell(Text(imageSize)),
-                  ]);
                   rows.add(newRow);
                 });
 
@@ -104,6 +103,7 @@ class FilePickerWidgetState extends StatelessWidget {
   }
 
   Future<void> _showImageFullSize() async {
+    final imageProvider = Provider.of<MyImageProvider>(context, listen: false);
     await showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -111,7 +111,7 @@ class FilePickerWidgetState extends StatelessWidget {
             content: Column(
               children: [
                 Image.file(
-                  File(_filePath as String), // Display the selected image
+                  File(imageProvider.filePath), // Display the selected image
                   width: 300,
                   height: 300,
                 ),
@@ -123,14 +123,11 @@ class FilePickerWidgetState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Opgave'),
-      ),
-      body: Column(
+    return Center(
+      child: Column(
         children: [
           ElevatedButton(
-            onPressed: _openFilePicker,
+            onPressed: () => _openFilePicker(),
             child: const Text('Choose File'),
           ),
           ImageDataGrid(rows),
